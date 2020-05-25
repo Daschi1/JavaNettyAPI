@@ -17,6 +17,7 @@ repositories {
 }
 
 dependencies {
+    compile group: 'io.netty', name: 'netty-all', version: '4.1.50.Final'
 }
 
 jar {

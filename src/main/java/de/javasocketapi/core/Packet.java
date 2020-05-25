@@ -1,21 +1,12 @@
 package de.javasocketapi.core;
 
-import java.util.UUID;
+import io.netty.buffer.ByteBuf;
 
-public abstract class Packet {
+import java.io.IOException;
 
-    private final UUID connectionUUID;
+public interface Packet {
 
-    public UUID getConnectionUUID() {
-        return this.connectionUUID;
-    }
+    void read(ByteBuf byteBuf) throws IOException;
 
-    public Packet(final UUID connectionUUID) {
-        this.connectionUUID = connectionUUID;
-    }
-
-    public abstract void send(WritingByteBuffer writingByteBuffer);
-
-    public abstract void recieve(ReadingByteBuffer readingByteBuffer);
-
+    void write(ByteBuf byteBuf) throws IOException;
 }
