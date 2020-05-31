@@ -35,13 +35,6 @@ public class ServerHandler extends SimpleChannelInboundHandler<Packet> {
 
     @Override
     protected void channelRead0(final ChannelHandlerContext channelHandlerContext, final Packet packet) throws Exception {
-        /*if (packet instanceof PacketPlayInOutPing) {
-            this.channel.writeAndFlush(packet, this.channel.voidPromise());
-        } else if (packet instanceof PacketPlayInTime) {
-            this.channel.writeAndFlush(new PacketPlayOutTime(System.currentTimeMillis()), this.channel.voidPromise());
-        } else if (packet instanceof PacketPlayInExit) {
-            this.channel.close();
-        }*/
-        // TODO: 25.05.2020 packet calling via id
+        System.out.println("Server received '" + packet.toString() + "' from "); // TODO: 31.05.2020 specific clients?
     }
 }
