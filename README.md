@@ -1,3 +1,5 @@
+# **OUTDATED - working on it**
+
 # JavaSocketAPI
 
 ## An api for java with the native Java socket technology and [netty](https://netty.io/).
