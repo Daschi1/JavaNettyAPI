@@ -1,18 +1,18 @@
-package de.javasocketapi.core.handler.server;
+package de.javasocketapi.core.codec.client;
 
-import de.javasocketapi.core.Packet;
-import de.javasocketapi.core.tcp.server.TcpServer;
+import de.javasocketapi.core.packet.Packet;
+import de.javasocketapi.core.tcp.client.TcpClient;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
 import java.util.List;
 
-public class TcpServerPacketDecoder extends ByteToMessageDecoder {
+public class TcpClientPacketDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> output) throws Exception {
         int id = byteBuf.readInt();
-        Class<? extends Packet> packetClass = TcpServer.PACKETS_PLAY_IN.get(id); // TODO: 25.05.2020 make via id
+        Class<? extends Packet> packetClass = TcpClient.PACKETS_PLAY_IN.get(id); // TODO: 25.05.2020 make via id
         if (packetClass == null) {
             throw new IllegalArgumentException("PacketId '" + id + "' is not registerd.");
         }

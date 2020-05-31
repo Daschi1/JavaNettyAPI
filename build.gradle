@@ -17,7 +17,8 @@ repositories {
 }
 
 dependencies {
-    compile group: 'io.netty', name: 'netty-all', version: '4.1.50.Final'
+    compile(group: 'io.netty', name: 'netty-all', version: '4.1.50.Final')
+    compile(group: 'org.reflections', name: 'reflections', version: '0.9.12')
 }
 
 jar {

@@ -91,7 +91,7 @@ RequestTimePacket:
 ```java
 package de.javasocketapitest.explanation;
 
-import de.javasocketapi.core.Packet;
+import de.javasocketapi.core.packet.Packet;
 import de.javasocketapi.core.ReadingByteBuffer;
 import de.javasocketapi.core.WritingByteBuffer;
 
@@ -119,7 +119,7 @@ ReturnTimePacket:
 ```java
 package de.javasocketapitest.explanation;
 
-import de.javasocketapi.core.Packet;
+import de.javasocketapi.core.packet.Packet;
 import de.javasocketapi.core.ReadingByteBuffer;
 import de.javasocketapi.core.WritingByteBuffer;
 

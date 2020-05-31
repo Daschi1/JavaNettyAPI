@@ -1,6 +1,6 @@
 package de.javasocketapi.core.tcp.client;
 
-import de.javasocketapi.core.Packet;
+import de.javasocketapi.core.packet.Packet;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
