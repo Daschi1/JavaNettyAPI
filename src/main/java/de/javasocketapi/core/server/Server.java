@@ -1,4 +1,4 @@
-package de.javasocketapi.core.tcp.server;
+package de.javasocketapi.core.server;
 
 import de.javasocketapi.core.codec.server.TcpServerPacketDecoder;
 import de.javasocketapi.core.codec.server.TcpServerPacketEncoder;
@@ -12,7 +12,7 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
-public class TcpServer extends Thread {
+public class Server extends Thread {
     public static final boolean EPOLL_IS_AVAILABLE = Epoll.isAvailable();
     //    public static final List<Class<? extends Packet>> PACKETS_PLAY_OUT = Arrays.asList(PacketPlayInOutPing.class, PacketPlayOutTime.class);
 //    public static final List<Class<? extends Packet>> PACKETS_PLAY_IN = Arrays.asList(PacketPlayInOutPing.class, PacketPlayInTime.class, PacketPlayInExit.class);
@@ -21,7 +21,7 @@ public class TcpServer extends Thread {
     private final String hostname;
     private final int port;
 
-    public TcpServer(final String hostname, final int port) {
+    public Server(final String hostname, final int port) {
         this.hostname = hostname;
         this.port = port;
         this.start();
@@ -30,12 +30,12 @@ public class TcpServer extends Thread {
     @Override
     public void run() {
         super.run();
-        final EventLoopGroup eventLoopGroup = TcpServer.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
+        final EventLoopGroup eventLoopGroup = Server.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
         try {
-            new ServerBootstrap().group(eventLoopGroup).channel(TcpServer.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childHandler(new ChannelInitializer<Channel>() {
+            new ServerBootstrap().group(eventLoopGroup).channel(Server.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childHandler(new ChannelInitializer<Channel>() {
                 @Override
                 protected void initChannel(final Channel channel) throws Exception {
-                    channel.pipeline().addLast(new TcpServerPacketDecoder()).addLast(new TcpServerPacketEncoder()).addLast(new TcpServerHandler());
+                    channel.pipeline().addLast(new TcpServerPacketDecoder()).addLast(new TcpServerPacketEncoder()).addLast(new ServerHandler());
                 }
             }).bind(this.hostname, this.port).sync().channel().closeFuture().syncUninterruptibly();
         } catch (final InterruptedException e) {

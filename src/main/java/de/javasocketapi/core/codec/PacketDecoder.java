@@ -16,7 +16,7 @@ public class PacketDecoder extends ByteToMessageDecoder {
         final Constructor<? extends Packet> constructor = PacketIDHandler.getPacketClassFromId(id).getDeclaredConstructor();
         constructor.setAccessible(true);
         final Packet packet = constructor.newInstance();
-        packet.read(byteBuf);
+        packet.receive(byteBuf);
         output.add(packet);
     }
 }
