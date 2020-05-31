@@ -1,4 +1,4 @@
-package de.javasocketapi.core.tcp.client;
+package de.javasocketapi.core.client;
 
 import de.javasocketapi.core.packet.Packet;
 import io.netty.channel.ChannelHandlerContext;
@@ -6,7 +6,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 import java.text.SimpleDateFormat;
 
-public class TcpClientHandler extends SimpleChannelInboundHandler<Packet> {
+public class ClientHandler extends SimpleChannelInboundHandler<Packet> {
 
     private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
