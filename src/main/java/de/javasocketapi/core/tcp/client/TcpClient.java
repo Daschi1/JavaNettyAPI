@@ -1,7 +1,7 @@
 package de.javasocketapi.core.tcp.client;
 
-import de.javasocketapi.core.handler.client.TcpClientPacketDecoder;
-import de.javasocketapi.core.handler.client.TcpClientPacketEncoder;
+import de.javasocketapi.core.codec.client.TcpClientPacketDecoder;
+import de.javasocketapi.core.codec.client.TcpClientPacketEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
