@@ -8,7 +8,7 @@ Download the latest jar file from the releases tab and implement it in your proj
 
 ### Example
 
-First, we need to create the server and the client in for example the main method and call the connect method on both. We're also going to add a shutdown hook to disconnect both again. The packets need to be registered before the server or the client start. The packets must be always registered in the same order, on both the server and the client-side.
+First, we need to create the server and the client in for example the main method and call the connect method on both. We're also going to add a shutdown hook to disconnect both again. The packets need to be registered before the server or the client starts. The packets must be always registered in the same order, on both the server and the client-side.
 
 Server:
 
