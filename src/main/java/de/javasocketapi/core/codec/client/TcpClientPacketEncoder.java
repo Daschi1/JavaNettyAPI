@@ -15,6 +15,6 @@ public class TcpClientPacketEncoder extends MessageToByteEncoder<Packet> {
         }
 
         output.writeInt(id);
-        packet.write(output);
+        packet.send(output);
     }
 }

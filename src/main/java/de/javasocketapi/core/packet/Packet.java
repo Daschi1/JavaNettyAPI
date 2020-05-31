@@ -9,7 +9,7 @@ public abstract class Packet {
     public Packet() {
     }
 
-    public abstract void read(ByteBuf byteBuf) throws IOException;
+    public abstract void send(ByteBuf byteBuf) throws IOException;
 
-    public abstract void write(ByteBuf byteBuf) throws IOException;
+    public abstract void receive(ByteBuf byteBuf) throws IOException;
 }

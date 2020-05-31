@@ -18,7 +18,7 @@ public class TcpClientPacketDecoder extends ByteToMessageDecoder {
         }
 
         Packet packet = packetClass.newInstance();
-        packet.read(byteBuf);
+        packet.receive(byteBuf);
 
         output.add(packet);
     }
