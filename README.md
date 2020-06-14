@@ -1,4 +1,4 @@
-# **DISCONTINUED - using [Hydra](https://github.com/DataSecs/Hydra)**
+# **UNCOMPLETE - WIP**
 
 # JavaSocketAPI
 
