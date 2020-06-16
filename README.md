@@ -33,7 +33,7 @@ client.sendPacket(/*packet*/); //send a packet to the server
 Packet:
 
 ```java
-@PacketID(0) //packetId, must be unique for each packet to match the equivalent client- and serverside packet
+@PacketID(0) //packetId, must be unique and zero or above for each packet to match the equivalent client- and serverside packet
 public class TestPacket extends Packet { //extends from packet
 
     private String testMessage; //any variables
