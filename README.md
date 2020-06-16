@@ -1,6 +1,6 @@
 # JavaSocketAPI
 
-## An api for java with [netty](https://netty.io/).
+## A java [netty](https://netty.io/) api.
 
 # Usage
 
