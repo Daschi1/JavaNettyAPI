@@ -1,157 +1,80 @@
-# **UNCOMPLETE - WIP**
-
 # JavaSocketAPI
 
 ## An api for java with [netty](https://netty.io/).
 
-### Implementation
-
-Download the latest jar file from the releases tab and implement it in your project. Make sure to also implement the jar file when building your project.
-
-### Example
-
-First, we need to create the server and the client in for example the main method and call the connect method on both. We're also going to add a shutdown hook to disconnect both again. The packets need to be registered before the server or the client starts. The packets must be always registered in the same order, on both the server and the client-side.
+# Usage
 
 Server:
 
 ```java
-package de.javasocketapitest.explanation;
+Server server = new Server(19503); //create server
+server.connect(); //connect server
+server.disconnect(); //disconnect server
 
-import de.javasocketapi.core.PacketRegistry;
-import de.javasocketapi.core.Server;
+server.sendPacket(/*client-uuid*/, /*packet*/); //send a packet to a specific client
+server.sendPacketToAll(/*packet*/); //send a packet to all clients
 
-import java.io.IOException;
-
-public class ServerMain {
-
-    private static Server server;
-
-    public static Server getServer() {
-        return server;
-    }
-
-    public static void main(String[] args) throws IOException {
-        PacketRegistry.registerPacket(RequestTimePacket.class);
-        PacketRegistry.registerPacket(ReturnTimePacket.class);
-
-        ServerMain.server = new Server(19503);
-        ServerMain.server.connect();
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                ServerMain.server.disconnect();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }));
-    }
-}
+server.disconnectClient(/*client-uuid*/); //disconnect a specific client
+server.disconnectAllClients(); //disconnect all clients
 ```
 
 Client:
 
 ```java
-package de.javasocketapitest.explanation;
+Client client = new Client("localhost", 19503); //create client
+client.connect(); //connect client
+client.disconnect(); //disconnect client
 
-import de.javasocketapi.core.Client;
-import de.javasocketapi.core.PacketRegistry;
+client.getUuid(); //get client-uuid
 
-import java.io.IOException;
-
-public class ClientMain {
-
-    private static Client client;
-
-    public static Client getClient() {
-        return client;
-    }
-
-    public static void main(String[] args) throws IOException {
-        PacketRegistry.registerPacket(RequestTimePacket.class);
-        PacketRegistry.registerPacket(ReturnTimePacket.class);
-
-        ClientMain.client = new Client("localhost", 19503);
-        ClientMain.client.connect();
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                ClientMain.client.disconnect();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }));
-
-        ClientMain.client.send(new RequestTimePacket(ClientMain.client.getConnectionUUID().get()));
-    }
-}
+client.sendPacket(/*packet*/); //send a packet to the server
 ```
 
-Let's continue by creating two packets, one for requesting the current time and one for actually returning it. We do this by creating the classes and extending it from Packet. After we did this, we need to implement the methods and the constructor. Note that the default constructor has to be there because it is used for system recognition. You can implement as many custom constructors as you like, but inside them, you need to always set the connectionUUID to null in the super call. In the send method, you just write every variable you want to send to the writingByteBuffer and in the recieve method you initialize them again reading them from the readingByteBuffer. You must read and write the variables in the same order because otherwise, the system couldn't handle it correctly.
-
-RequestTimePacket:
+Packet:
 
 ```java
-package de.javasocketapitest.explanation;
+@PacketID(0) //packetId, must be unique for each packet to match the equivalent client- and serverside packet
+public class TestPacket extends Packet { //extends from packet
 
-import de.javasocketapi.core.packet.Packet;
-import de.javasocketapi.core.ReadingByteBuffer;
-import de.javasocketapi.core.WritingByteBuffer;
+    private String testMessage; //any variables
 
-import java.util.UUID;
+    public TestPacket() { //empty constructor needs to be present
+    }
 
-public class RequestTimePacket extends Packet {
-    public RequestTimePacket(UUID connectionUUID) {
-        super(connectionUUID);
+    public TestPacket(final String testMessage) { //any other constructors
+        this.testMessage = testMessage;
     }
 
     @Override
-    public void send(WritingByteBuffer writingByteBuffer) {
+    public void write(final ByteBuf byteBuf) { //write variables
+        byteBuf.writeInt(0);
+        this.writeString(byteBuf, this.testMessage);
+    }
+
+    @Override
+    public void read(final ByteBuf byteBuf) { //and read them ins the same order
+        int i = byteBuf.readInt();
+        this.testMessage = this.readString(byteBuf);
+    }
+
+    @Override
+    public void clientSent() { //called when the client sent the packet
 
     }
 
     @Override
-    public void recieve(ReadingByteBuffer readingByteBuffer) {
-        ServerMain.getServer().sendToClient(new ReturnTimePacket(System.currentTimeMillis()), getConnectionUUID());
+    public void clientReceived() { //called when the client recieved the packet
+        
+    }
+
+    @Override
+    public void serverSent(final UUID uuid) { //called when the server sent the packet to the client-uuid
+
+    }
+
+    @Override
+    public void serverReceived(final UUID uuid) { //called when the server recieved the packet from the client-uuid
+
     }
 }
 ```
-
-ReturnTimePacket:
-
-```java
-package de.javasocketapitest.explanation;
-
-import de.javasocketapi.core.packet.Packet;
-import de.javasocketapi.core.ReadingByteBuffer;
-import de.javasocketapi.core.WritingByteBuffer;
-
-import java.util.UUID;
-
-public class ReturnTimePacket extends Packet {
-
-    private long currentTimeMillis;
-
-    public ReturnTimePacket(UUID connectionUUID) {
-        super(connectionUUID);
-    }
-
-    public ReturnTimePacket(long currentTimeMillis) {
-        super(null);
-        this.currentTimeMillis = currentTimeMillis;
-    }
-
-    @Override
-    public void send(WritingByteBuffer writingByteBuffer) {
-        writingByteBuffer.writeLong(this.currentTimeMillis);
-    }
-
-    @Override
-    public void recieve(ReadingByteBuffer readingByteBuffer) {
-        this.currentTimeMillis = readingByteBuffer.readLong();
-
-        System.out.println("current time millis: " + this.currentTimeMillis);
-    }
-}
-```
-
-When you want to send a packet to all clients, you can simply use the method server.sendToAllClients. Or if you want to disconnect a single client server.disconnectClient(final UUID uuid) or all clients, you can simply call server.disconnectAllClients.
