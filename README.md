@@ -1,6 +1,6 @@
 # JavaNettyAPI
 
-## A java [netty](https://netty.io/) api.
+## A java [netty](https://netty.io/) api with [reflections](https://github.com/ronmamo/reflections).
 
 # Usage
 
