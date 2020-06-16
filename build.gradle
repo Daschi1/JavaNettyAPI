@@ -5,9 +5,6 @@ plugins {
 group 'de.daschi'
 version 'v0.0.0a'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
@@ -26,4 +23,10 @@ jar {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
     exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
+
+    manifest {
+        attributes(
+                'Main-Class': "de.daschi.javanettyapi.test.Main"
+        )
+    }
 }
