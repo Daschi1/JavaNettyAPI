@@ -1,4 +1,4 @@
-package de.javasocketapi.core.packet;
+package de.daschi.javanettyapi.packets;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -8,7 +8,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface PacketID {
-
-    int id();
-
+    int value();
 }
