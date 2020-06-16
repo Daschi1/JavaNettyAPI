@@ -1,4 +1,4 @@
-# JavaSocketAPI
+# JavaNettyAPI
 
 ## A java [netty](https://netty.io/) api.
 
