@@ -20,6 +20,11 @@ public class Core {
     private static final List<Class<? extends Packet>> systemPackets = new ArrayList<>(Arrays.asList(PacketPlayOutClientRegistered.class, PacketPlayOutClientUnregistered.class, PacketPlayOutClientDisconnect.class));
     private static final List<Class<? extends Packet>> packets = new ArrayList<>();
 
+    static {
+        Core.loadPackets("de.daschi.javanettyapi.packets.server");
+        Core.loadPackets("de.daschi.javanettyapi.packets.client");
+    }
+
     public static void loadPackets(final String packagePrefix) {
         final Reflections reflections = new Reflections(packagePrefix);
         final Set<Class<? extends Packet>> packets = reflections.getSubTypesOf(Packet.class);
