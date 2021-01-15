@@ -15,7 +15,13 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import java.util.UUID;
 
 public class Client {
@@ -41,10 +47,13 @@ public class Client {
 
     public void connect() {
         try {
-            this.channel = new Bootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollSocketChannel.class : NioSocketChannel.class).handler(new ChannelInitializer<Channel>() {
+            this.channel = new Bootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollSocketChannel.class : NioSocketChannel.class).handler(new ChannelInitializer<>() {
                 @Override
-                protected void initChannel(final Channel channel) {
-                    channel.pipeline().addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ClientSession());
+                protected void initChannel(final Channel channel) throws SSLException {
+                    SslContext sslContext = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
+                    SSLEngine sslEngine = sslContext.newEngine(channel.alloc(), hostname , port);
+                    sslEngine.setEnabledProtocols(new String[] {"TLSv.1.2"});
+                    channel.pipeline().addLast(new SslHandler(sslEngine , false)).addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ClientSession());
                 }
             }).connect(this.hostname, this.port).sync().channel();
 

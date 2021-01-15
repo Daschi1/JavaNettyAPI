@@ -14,7 +14,14 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.util.SelfSignedCertificate;
 
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
+import java.security.cert.CertificateException;
 import java.util.UUID;
 
 public class Server {
@@ -26,13 +33,15 @@ public class Server {
     }
 
     private final int port;
+    private final String hostname;
     private boolean shuttingDown;
     private final EventLoopGroup eventLoopGroup;
     private Channel channel;
 
-    public Server(final int port) {
+    public Server(final String hostname, final int port) {
         Server.server = this;
         this.port = port;
+        this.hostname = hostname;
         this.shuttingDown = false;
 
         this.eventLoopGroup = Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
@@ -40,12 +49,15 @@ public class Server {
 
     public void connect() {
         try {
-            this.channel = new ServerBootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childHandler(new ChannelInitializer<Channel>() {
+            this.channel = new ServerBootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childHandler(new ChannelInitializer<>() {
                 @Override
-                protected void initChannel(final Channel channel) {
-                    channel.pipeline().addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ServerSession());
+                protected void initChannel(final Channel channel) throws CertificateException, SSLException {
+                    SelfSignedCertificate selfSignedCertificate = new SelfSignedCertificate();
+                    SslContext sslContext = SslContextBuilder.forServer(selfSignedCertificate.privateKey() , selfSignedCertificate.certificate()).build();
+                    SSLEngine sslEngine = sslContext.newEngine(channel.alloc());
+                    channel.pipeline().addLast("ssl",new SslHandler(sslEngine)).addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ServerSession());
                 }
-            }).bind(this.port).sync().channel();
+            }).bind(this.hostname,this.port).sync().channel();
         } catch (final InterruptedException exception) {
             throw new JavaNettyAPIException("Could not bind the server on '" + this.port + "'.", exception);
         }
