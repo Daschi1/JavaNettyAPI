@@ -38,13 +38,12 @@ public class Server {
     private final EventLoopGroup eventLoopGroup;
     private Channel channel;
 
-    public Server(final String hostname, final int port) {
+    public Server(final String hostname, final int port, final int nThreads) {
         Server.server = this;
         this.port = port;
         this.hostname = hostname;
         this.shuttingDown = false;
-
-        this.eventLoopGroup = Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
+        this.eventLoopGroup = nThreads != 0 ? Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup(nThreads) : new NioEventLoopGroup(nThreads) : Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
     }
 
     public void connect() {
@@ -53,9 +52,9 @@ public class Server {
                 @Override
                 protected void initChannel(final Channel channel) throws CertificateException, SSLException {
                     SelfSignedCertificate selfSignedCertificate = new SelfSignedCertificate();
-                    SslContext sslContext = SslContextBuilder.forServer(selfSignedCertificate.privateKey() , selfSignedCertificate.certificate()).build();
+                    SslContext sslContext = SslContextBuilder.forServer(selfSignedCertificate.privateKey(), selfSignedCertificate.certificate()).build();
                     SSLEngine sslEngine = sslContext.newEngine(channel.alloc());
-                    channel.pipeline().addLast("ssl",new SslHandler(sslEngine)).addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ServerSession());
+                    channel.pipeline().addLast("ssl", new SslHandler(sslEngine)).addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ServerSession());
                 }
             }).bind(this.hostname,this.port).sync().channel();
         } catch (final InterruptedException exception) {
@@ -75,8 +74,20 @@ public class Server {
         ServerSession.getChannels().get(uuid).writeAndFlush(packet, ServerSession.getChannels().get(uuid).voidPromise());
     }
 
+    public void sendPacketAsync(final UUID uuid, final Packet packet) {
+        this.eventLoopGroup.submit(() -> {
+            ServerSession.getChannels().get(uuid).writeAndFlush(packet, ServerSession.getChannels().get(uuid).voidPromise());
+        });
+    }
+
     public void sendPacketToAll(final Packet packet) {
         ServerSession.getChannels().forEach((uuid, channel) -> this.sendPacket(uuid, packet));
+    }
+
+    public void sendPacketToAllAsync(final Packet packet) {
+        this.eventLoopGroup.submit(() -> {
+            ServerSession.getChannels().forEach((uuid, channel) -> this.sendPacket(uuid, packet));
+        });
     }
 
     public void disconnectClient(final UUID uuid) {

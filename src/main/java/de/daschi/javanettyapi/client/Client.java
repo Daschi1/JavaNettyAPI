@@ -34,15 +34,15 @@ public class Client {
     private final String hostname;
     private final int port;
     private final UUID uuid;
-    EventLoopGroup eventLoopGroup;
+    private final EventLoopGroup eventLoopGroup;
     private Channel channel;
 
-    public Client(final String hostname, final int port) {
+    public Client(final String hostname, final int port, final int nThreads) {
         Client.client = this;
         this.hostname = hostname;
         this.port = port;
         this.uuid = UUID.randomUUID();
-        this.eventLoopGroup = Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
+        this.eventLoopGroup = nThreads != 0 ? Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup(nThreads) : new NioEventLoopGroup(nThreads) : Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
     }
 
     public void connect() {
@@ -51,9 +51,9 @@ public class Client {
                 @Override
                 protected void initChannel(final Channel channel) throws SSLException {
                     SslContext sslContext = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
-                    SSLEngine sslEngine = sslContext.newEngine(channel.alloc(), hostname , port);
-                    sslEngine.setEnabledProtocols(new String[] {"TLSv.1.2"});
-                    channel.pipeline().addLast(new SslHandler(sslEngine , false)).addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ClientSession());
+                    SSLEngine sslEngine = sslContext.newEngine(channel.alloc(), hostname, port);
+                    sslEngine.setEnabledProtocols(new String[]{"TLSv.1.2"});
+                    channel.pipeline().addLast(new SslHandler(sslEngine, false)).addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ClientSession());
                 }
             }).connect(this.hostname, this.port).sync().channel();
 
@@ -71,6 +71,12 @@ public class Client {
 
     public void sendPacket(final Packet packet) {
         this.channel.writeAndFlush(packet, this.channel.voidPromise());
+    }
+
+    public void sendPacketAsync(final Packet packet) {
+        this.eventLoopGroup.submit(() -> {
+            this.channel.writeAndFlush(packet, this.channel.voidPromise());
+        });
     }
 
     public String getHostname() {
