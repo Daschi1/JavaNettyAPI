@@ -28,13 +28,13 @@ public class Core {
     public static void loadPackets(final String packagePrefix) {
         final Reflections reflections = new Reflections(packagePrefix);
         final Set<Class<? extends Packet>> packets = reflections.getSubTypesOf(Packet.class);
-        for (final Class<? extends Packet> packet : packets) {
+        packets.forEach(packet -> {
             if (Core.systemPackets.contains(packet) || Core.getPacketId(packet) >= 0) {
                 Core.packets.add(packet);
-                continue;
+                return;
             }
             throw new JavaNettyAPIException("The packet '" + packet + "' is not allowed to have a packetID below zero.");
-        }
+        });
     }
 
     public static int getPacketId(final Class<? extends Packet> packet) {
