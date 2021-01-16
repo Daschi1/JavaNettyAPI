@@ -24,6 +24,7 @@ import javax.net.ssl.SSLException;
 import java.security.cert.CertificateException;
 import java.util.UUID;
 
+@SuppressWarnings("rawtypes")
 public class Server {
 
     private static Server server;
@@ -48,7 +49,7 @@ public class Server {
 
     public void connect() {
         try {
-            this.channel = new ServerBootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childHandler(new ChannelInitializer<>() {
+            this.channel = new ServerBootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childHandler(new ChannelInitializer() {
                 @Override
                 protected void initChannel(final Channel channel) throws CertificateException, SSLException {
                     SelfSignedCertificate selfSignedCertificate = new SelfSignedCertificate();

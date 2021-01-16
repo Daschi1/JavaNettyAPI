@@ -5,7 +5,7 @@ plugins {
 apply plugin: 'java'
 
 group 'de.daschi'
-version 'v1.0.5'
+version 'v1.0.5a'
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
