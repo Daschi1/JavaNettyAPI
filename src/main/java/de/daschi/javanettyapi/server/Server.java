@@ -16,11 +16,7 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
 
-import javax.net.ssl.SSLException;
-import java.security.cert.CertificateException;
 import java.util.UUID;
 
 public class Server {
@@ -36,83 +32,41 @@ public class Server {
     private boolean shuttingDown;
     private final EventLoopGroup eventLoopGroup;
     private Channel channel;
-    private final boolean ssl;
-    private SslContext sslContext;
 
-    public Server(final String hostname, final int port, final boolean ssl, final int nThreads) {
+    public Server(final String hostname, final int port, final int nThreads) {
         Server.server = this;
         this.port = port;
         this.hostname = hostname;
         this.shuttingDown = false;
-        this.ssl = ssl;
         this.eventLoopGroup = nThreads != 0 ? Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup(nThreads) : new NioEventLoopGroup(nThreads) : Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
     }
 
     public void connectWithOptions() {
-        if (this.ssl) {
-            this.setSslContext();
-            try {
-                this.channel = new ServerBootstrap().group(this.eventLoopGroup).option(ChannelOption.ALLOCATOR, ByteBufAllocator.DEFAULT).option(ChannelOption.AUTO_READ, true).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childOption(ChannelOption.TCP_NODELAY, true).childOption(ChannelOption.SO_KEEPALIVE, true).childOption(ChannelOption.AUTO_READ, true).childHandler(new ChannelInitializer() {
-                    @Override
-                    protected void initChannel(final Channel channel) {
-                        channel.pipeline().addLast(Server.this.sslContext.newHandler(channel.alloc())).addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ServerSession());
-                    }
-                }).bind(this.hostname, this.port).sync().channel();
-            } catch (final InterruptedException exception) {
-                throw new JavaNettyAPIException("Could not bind the server on '" + this.port + "'.", exception);
-            }
-        } else {
-            try {
-                this.channel = new ServerBootstrap().group(this.eventLoopGroup).option(ChannelOption.ALLOCATOR, ByteBufAllocator.DEFAULT).option(ChannelOption.AUTO_READ, true).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childOption(ChannelOption.TCP_NODELAY, true).childOption(ChannelOption.SO_KEEPALIVE, true).childOption(ChannelOption.AUTO_READ, true).childHandler(new ChannelInitializer() {
-                    @Override
-                    protected void initChannel(final Channel channel) {
-                        channel.pipeline().addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ServerSession());
-                    }
-                }).bind(this.hostname, this.port).sync().channel();
-            } catch (final InterruptedException exception) {
-                throw new JavaNettyAPIException("Could not bind the server on '" + this.port + "'.", exception);
-            }
+        try {
+            this.channel = new ServerBootstrap().group(this.eventLoopGroup).option(ChannelOption.ALLOCATOR, ByteBufAllocator.DEFAULT).option(ChannelOption.AUTO_READ, true).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childOption(ChannelOption.TCP_NODELAY, true).childOption(ChannelOption.SO_KEEPALIVE, true).childOption(ChannelOption.AUTO_READ, true).childHandler(new ChannelInitializer() {
+                @Override
+                protected void initChannel(final Channel channel) {
+                    channel.pipeline().addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ServerSession());
+                }
+            }).bind(this.hostname, this.port).sync().channel();
+        } catch (final InterruptedException exception) {
+            throw new JavaNettyAPIException("Could not bind the server on '" + this.port + "'.", exception);
         }
     }
 
     public void connect() {
-        if (this.ssl) {
-            this.setSslContext();
-            try {
-                this.channel = new ServerBootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childHandler(new ChannelInitializer() {
-                    @Override
-                    protected void initChannel(final Channel channel) {
-                        channel.pipeline().addLast(Server.this.sslContext.newHandler(channel.alloc())).addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ServerSession());
-                    }
-                }).bind(this.hostname, this.port).sync().channel();
-            } catch (final InterruptedException exception) {
-                throw new JavaNettyAPIException("Could not bind the server on '" + this.port + "'.", exception);
-            }
-        } else {
-            try {
-                this.channel = new ServerBootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childHandler(new ChannelInitializer() {
-                    @Override
-                    protected void initChannel(final Channel channel) {
-                        channel.pipeline().addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ServerSession());
-                    }
-                }).bind(this.hostname, this.port).sync().channel();
-            } catch (final InterruptedException exception) {
-                throw new JavaNettyAPIException("Could not bind the server on '" + this.port + "'.", exception);
-            }
-        }
-
-    }
-
-    private void setSslContext() {
-        final SelfSignedCertificate selfSignedCertificate;
         try {
-            selfSignedCertificate = new SelfSignedCertificate();
-            this.sslContext = SslContext.newServerContext(selfSignedCertificate.certificate(), selfSignedCertificate.privateKey());
-        } catch (final CertificateException | SSLException exception) {
-            exception.printStackTrace();
+            this.channel = new ServerBootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childHandler(new ChannelInitializer() {
+                @Override
+                protected void initChannel(final Channel channel) {
+                    channel.pipeline().addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ServerSession());
+                }
+            }).bind(this.hostname, this.port).sync().channel();
+        } catch (final InterruptedException exception) {
+            throw new JavaNettyAPIException("Could not bind the server on '" + this.port + "'.", exception);
         }
-
     }
+
 
     public void disconnect() {
         this.shuttingDown = true;
@@ -152,10 +106,6 @@ public class Server {
 
     public String getHostname() {
         return this.hostname;
-    }
-
-    public boolean isSsl() {
-        return this.ssl;
     }
 
     public int getPort() {
