@@ -16,12 +16,10 @@ import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import io.netty.handler.ssl.util.SelfSignedCertificate;
 
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
+import java.security.cert.CertificateException;
 import java.util.UUID;
 
 @SuppressWarnings("rawtypes")
@@ -37,30 +35,53 @@ public class Client {
     private final UUID uuid;
     private final EventLoopGroup eventLoopGroup;
     private Channel channel;
+    private final boolean ssl;
+    private SslContext sslContext;
 
-    public Client(final String hostname, final int port, final int nThreads) {
+    public Client(final String hostname, final int port, final boolean ssl, final int nThreads) {
         Client.client = this;
         this.hostname = hostname;
         this.port = port;
         this.uuid = UUID.randomUUID();
+        this.ssl = ssl;
         this.eventLoopGroup = nThreads != 0 ? Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup(nThreads) : new NioEventLoopGroup(nThreads) : Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
     }
 
     public void connect() {
-        try {
-            this.channel = new Bootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollSocketChannel.class : NioSocketChannel.class).handler(new ChannelInitializer() {
-                @Override
-                protected void initChannel(final Channel channel) throws SSLException {
-                    SslContext sslContext = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
-                    SSLEngine sslEngine = sslContext.newEngine(channel.alloc(), hostname, port);
-                    sslEngine.setEnabledProtocols(new String[]{"TLSv.1.2"});
-                    channel.pipeline().addLast(new SslHandler(sslEngine, false)).addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ClientSession());
-                }
-            }).connect(this.hostname, this.port).sync().channel();
+        if (this.ssl) {
+            this.setSslContext();
+            try {
+                this.channel = new Bootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollSocketChannel.class : NioSocketChannel.class).handler(new ChannelInitializer() {
+                    @Override
+                    protected void initChannel(final Channel channel) {
+                        channel.pipeline().addLast(Client.this.sslContext.newHandler(channel.alloc(), Client.this.hostname, Client.this.port)).addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ClientSession());
+                    }
+                }).connect(this.hostname, this.port).sync().channel();
+                this.sendPacket(new PacketPlayOutClientRegistered(this.uuid));
+            } catch (final InterruptedException exception) {
+                throw new JavaNettyAPIException("Could not connect the client to '" + this.hostname + ":" + this.port + "'.", exception);
+            }
+        } else {
+            try {
+                this.channel = new Bootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollSocketChannel.class : NioSocketChannel.class).handler(new ChannelInitializer() {
+                    @Override
+                    protected void initChannel(final Channel channel) {
+                        channel.pipeline().addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ClientSession());
+                    }
+                }).connect(this.hostname, this.port).sync().channel();
+                this.sendPacket(new PacketPlayOutClientRegistered(this.uuid));
+            } catch (final InterruptedException exception) {
+                throw new JavaNettyAPIException("Could not connect the client to '" + this.hostname + ":" + this.port + "'.", exception);
+            }
+        }
+    }
 
-            this.sendPacket(new PacketPlayOutClientRegistered(this.uuid));
-        } catch (final InterruptedException exception) {
-            throw new JavaNettyAPIException("Could not connect the client to '" + this.hostname + ":" + this.port + "'.", exception);
+    private void setSslContext() {
+        try {
+            final SelfSignedCertificate selfSignedCertificate = new SelfSignedCertificate();
+            this.sslContext = SslContext.newClientContext(selfSignedCertificate.certificate());
+        } catch (final CertificateException | SSLException e) {
+            e.printStackTrace();
         }
     }
 
@@ -78,6 +99,14 @@ public class Client {
         this.eventLoopGroup.submit(() -> {
             this.channel.writeAndFlush(packet, this.channel.voidPromise());
         });
+    }
+
+    public boolean isSsl() {
+        return this.ssl;
+    }
+
+    public SslContext getSslContext() {
+        return this.sslContext;
     }
 
     public String getHostname() {
