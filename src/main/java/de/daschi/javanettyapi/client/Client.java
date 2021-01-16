@@ -50,6 +50,7 @@ public class Client {
             this.channel = new Bootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollSocketChannel.class : NioSocketChannel.class).handler(new ChannelInitializer<>() {
                 @Override
 
+
                 protected void initChannel(final Channel channel) throws SSLException {
                     SslContext sslContext = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
                     SSLEngine sslEngine = sslContext.newEngine(channel.alloc(), hostname, port);
