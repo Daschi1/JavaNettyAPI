@@ -17,7 +17,9 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class Server {
 
@@ -80,20 +82,18 @@ public class Server {
         ServerSession.getChannels().get(uuid).writeAndFlush(packet, ServerSession.getChannels().get(uuid).voidPromise());
     }
 
-    public void sendPacketAsync(final UUID uuid, final Packet packet) {
-        this.eventLoopGroup.submit(() -> {
-            ServerSession.getChannels().get(uuid).writeAndFlush(packet, ServerSession.getChannels().get(uuid).voidPromise());
-        });
+    public CompletableFuture<Void> sendPacketAsync(final UUID uuid, final Packet packet) {
+        return CompletableFuture.runAsync(() -> ServerSession.getChannels().get(uuid).writeAndFlush(packet, ServerSession.getChannels().get(uuid).voidPromise()), this.getEventLoopGroup());
     }
 
     public void sendPacketToAll(final Packet packet) {
         ServerSession.getChannels().forEach((uuid, channel) -> this.sendPacket(uuid, packet));
     }
 
-    public void sendPacketToAllAsync(final Packet packet) {
-        this.eventLoopGroup.submit(() -> {
+    public CompletableFuture<Void> sendPacketToAllAsync(final Packet packet) {
+        return CompletableFuture.runAsync(() -> {
             ServerSession.getChannels().forEach((uuid, channel) -> this.sendPacket(uuid, packet));
-        });
+        }, this.getEventLoopGroup());
     }
 
     public void disconnectClient(final UUID uuid) {
@@ -101,7 +101,10 @@ public class Server {
     }
 
     public void disconnectAllClients() {
-        ServerSession.getChannels().forEach((uuid, channel) -> this.disconnectClient(uuid));
+        final Map<UUID, Channel> uuidChannelMap = ServerSession.getChannels();
+        if (!uuidChannelMap.isEmpty()) {
+            uuidChannelMap.forEach((uuid, channel) -> this.disconnectClient(uuid));
+        }
     }
 
     public String getHostname() {

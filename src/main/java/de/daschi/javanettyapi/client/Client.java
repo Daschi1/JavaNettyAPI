@@ -17,6 +17,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class Client {
     private static Client client;
@@ -64,10 +65,8 @@ public class Client {
         this.channel.writeAndFlush(packet, this.channel.voidPromise());
     }
 
-    public void sendPacketAsync(final Packet packet) {
-        this.eventLoopGroup.submit(() -> {
-            this.channel.writeAndFlush(packet, this.channel.voidPromise());
-        });
+    public CompletableFuture<Void> sendPacketAsync(final Packet packet) {
+        return CompletableFuture.runAsync(() -> this.channel.writeAndFlush(packet, this.channel.voidPromise()), this.getEventLoopGroup());
     }
 
 
