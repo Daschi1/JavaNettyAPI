@@ -7,15 +7,20 @@ import de.daschi.javanettyapi.packets.PacketDecoder;
 import de.daschi.javanettyapi.packets.PacketEncoder;
 import de.daschi.javanettyapi.packets.server.PacketPlayOutClientDisconnect;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class Server {
 
@@ -26,45 +31,69 @@ public class Server {
     }
 
     private final int port;
+    private final String hostname;
     private boolean shuttingDown;
     private final EventLoopGroup eventLoopGroup;
     private Channel channel;
 
-    public Server(final int port) {
+    public Server(final String hostname, final int port, final int nThreads) {
         Server.server = this;
         this.port = port;
+        this.hostname = hostname;
         this.shuttingDown = false;
-
-        this.eventLoopGroup = Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
+        this.eventLoopGroup = nThreads != 0 ? Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup(nThreads) : new NioEventLoopGroup(nThreads) : Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
     }
 
-    public void connect() {
+    public void connectWithOptions() {
         try {
-            this.channel = new ServerBootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childHandler(new ChannelInitializer<Channel>() {
+            this.channel = new ServerBootstrap().group(this.eventLoopGroup).option(ChannelOption.ALLOCATOR, ByteBufAllocator.DEFAULT).option(ChannelOption.AUTO_READ, true).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childOption(ChannelOption.TCP_NODELAY, true).childOption(ChannelOption.SO_KEEPALIVE, true).childOption(ChannelOption.AUTO_READ, true).childHandler(new ChannelInitializer() {
                 @Override
                 protected void initChannel(final Channel channel) {
                     channel.pipeline().addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ServerSession());
                 }
-            }).bind(this.port).sync().channel();
+            }).bind(this.hostname, this.port).sync().channel();
         } catch (final InterruptedException exception) {
             throw new JavaNettyAPIException("Could not bind the server on '" + this.port + "'.", exception);
         }
     }
 
-    public void disconnect() {
+    public void connect() {
+        try {
+            this.channel = new ServerBootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollServerSocketChannel.class : NioServerSocketChannel.class).childHandler(new ChannelInitializer() {
+                @Override
+                protected void initChannel(final Channel channel) {
+                    channel.pipeline().addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ServerSession());
+                }
+            }).bind(this.hostname, this.port).sync().channel();
+        } catch (final InterruptedException exception) {
+            throw new JavaNettyAPIException("Could not bind the server on '" + this.port + "'.", exception);
+        }
+    }
+
+
+    public void disconnect() throws ExecutionException, InterruptedException {
         this.shuttingDown = true;
         this.disconnectAllClients();
-
-        this.channel.closeFuture().awaitUninterruptibly();
-        this.eventLoopGroup.shutdownGracefully();
+        this.channel.closeFuture().awaitUninterruptibly().get();
+        this.eventLoopGroup.shutdownGracefully().get();
     }
 
     public void sendPacket(final UUID uuid, final Packet packet) {
         ServerSession.getChannels().get(uuid).writeAndFlush(packet, ServerSession.getChannels().get(uuid).voidPromise());
     }
 
+    public CompletableFuture<Void> sendPacketAsync(final UUID uuid, final Packet packet) {
+        return CompletableFuture.runAsync(() -> ServerSession.getChannels().get(uuid).writeAndFlush(packet, ServerSession.getChannels().get(uuid).voidPromise()), this.getEventLoopGroup());
+    }
+
     public void sendPacketToAll(final Packet packet) {
         ServerSession.getChannels().forEach((uuid, channel) -> this.sendPacket(uuid, packet));
+    }
+
+    public CompletableFuture<Void> sendPacketToAllAsync(final Packet packet) {
+        return CompletableFuture.runAsync(() -> {
+            ServerSession.getChannels().forEach((uuid, channel) -> this.sendPacket(uuid, packet));
+        }, this.getEventLoopGroup());
     }
 
     public void disconnectClient(final UUID uuid) {
@@ -72,7 +101,14 @@ public class Server {
     }
 
     public void disconnectAllClients() {
-        ServerSession.getChannels().forEach((uuid, channel) -> this.disconnectClient(uuid));
+        final Map<UUID, Channel> uuidChannelMap = ServerSession.getChannels();
+        if (!uuidChannelMap.isEmpty()) {
+            uuidChannelMap.forEach((uuid, channel) -> this.disconnectClient(uuid));
+        }
+    }
+
+    public String getHostname() {
+        return this.hostname;
     }
 
     public int getPort() {

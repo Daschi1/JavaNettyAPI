@@ -17,6 +17,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class Client {
     private static Client client;
@@ -28,31 +29,31 @@ public class Client {
     private final String hostname;
     private final int port;
     private final UUID uuid;
-    EventLoopGroup eventLoopGroup;
+    private final EventLoopGroup eventLoopGroup;
     private Channel channel;
 
-    public Client(final String hostname, final int port) {
+    public Client(final String hostname, final int port, final int nThreads) {
         Client.client = this;
         this.hostname = hostname;
         this.port = port;
         this.uuid = UUID.randomUUID();
-        this.eventLoopGroup = Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
+        this.eventLoopGroup = nThreads != 0 ? Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup(nThreads) : new NioEventLoopGroup(nThreads) : Core.EPOLL_IS_AVAILABLE ? new EpollEventLoopGroup() : new NioEventLoopGroup();
     }
 
     public void connect() {
         try {
-            this.channel = new Bootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollSocketChannel.class : NioSocketChannel.class).handler(new ChannelInitializer<Channel>() {
+            this.channel = new Bootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollSocketChannel.class : NioSocketChannel.class).handler(new ChannelInitializer() {
                 @Override
                 protected void initChannel(final Channel channel) {
                     channel.pipeline().addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ClientSession());
                 }
             }).connect(this.hostname, this.port).sync().channel();
-
             this.sendPacket(new PacketPlayOutClientRegistered(this.uuid));
         } catch (final InterruptedException exception) {
             throw new JavaNettyAPIException("Could not connect the client to '" + this.hostname + ":" + this.port + "'.", exception);
         }
     }
+
 
     public void disconnect() {
         this.sendPacket(new PacketPlayOutClientUnregistered(this.uuid));
@@ -63,6 +64,11 @@ public class Client {
     public void sendPacket(final Packet packet) {
         this.channel.writeAndFlush(packet, this.channel.voidPromise());
     }
+
+    public CompletableFuture<Void> sendPacketAsync(final Packet packet) {
+        return CompletableFuture.runAsync(() -> this.channel.writeAndFlush(packet, this.channel.voidPromise()), this.getEventLoopGroup());
+    }
+
 
     public String getHostname() {
         return this.hostname;
