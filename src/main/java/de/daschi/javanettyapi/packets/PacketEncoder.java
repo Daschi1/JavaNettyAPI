@@ -17,12 +17,12 @@ public class PacketEncoder extends MessageToByteEncoder<Packet> {
         }
         packet.write(byteBuf);
         if (ClientSession.getChannel() != null) {
-            System.out.println("Sent packet '" + packet.getClass().getSimpleName() + "'.");
+            // System.out.println("Sent packet '" + packet.getClass().getSimpleName() + "'.");
             packet.clientSent();
         } else {
             ServerSession.getChannels().forEach((uuid, channel) -> {
                 if (channel.id().asShortText().equals(channelHandlerContext.channel().id().asShortText())) {
-                    System.out.println("Sent packet '" + packet.getClass().getSimpleName() + "' to '" + uuid + "'.");
+                    // System.out.println("Sent packet '" + packet.getClass().getSimpleName() + "' to '" + uuid + "'.");
                     packet.serverSent(uuid);
                 }
             });

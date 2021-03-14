@@ -20,7 +20,7 @@ public class ClientSession extends SimpleChannelInboundHandler<Packet> {
     public void channelActive(final ChannelHandlerContext channelHandlerContext) throws Exception {
         super.channelActive(channelHandlerContext);
 
-        System.out.println("Connected to '" + channelHandlerContext.channel().remoteAddress() + "'.");
+        // System.out.println("Connected to '" + channelHandlerContext.channel().remoteAddress() + "'.");
         ClientSession.channel = channelHandlerContext.channel();
     }
 
@@ -28,7 +28,7 @@ public class ClientSession extends SimpleChannelInboundHandler<Packet> {
     public void channelInactive(final ChannelHandlerContext channelHandlerContext) throws Exception {
         super.channelInactive(channelHandlerContext);
 
-        System.out.println("Disconnected to '" + channelHandlerContext.channel().remoteAddress() + "'.");
+        // System.out.println("Disconnected to '" + channelHandlerContext.channel().remoteAddress() + "'.");
         ClientSession.channel = null;
     }
 

@@ -32,10 +32,10 @@ public class ServerSession extends SimpleChannelInboundHandler<Packet> {
     @Override
     protected void channelRead0(final ChannelHandlerContext channelHandlerContext, final Packet packet) {
         if (packet instanceof PacketPlayOutClientRegistered) {
-            System.out.println("Client '" + ((PacketPlayOutClientRegistered) packet).getUuid() + "' connected from '" + channelHandlerContext.channel().remoteAddress() + "'.");
+            // System.out.println("Client '" + ((PacketPlayOutClientRegistered) packet).getUuid() + "' connected from '" + channelHandlerContext.channel().remoteAddress() + "'.");
             ServerSession.channels.put(((PacketPlayOutClientRegistered) packet).getUuid(), channelHandlerContext.channel());
         } else if (packet instanceof PacketPlayOutClientUnregistered) {
-            System.out.println("Client '" + ((PacketPlayOutClientUnregistered) packet).getUuid() + "' disconnected from '" + channelHandlerContext.channel().remoteAddress() + "'.");
+            // System.out.println("Client '" + ((PacketPlayOutClientUnregistered) packet).getUuid() + "' disconnected from '" + channelHandlerContext.channel().remoteAddress() + "'.");
             ServerSession.channels.remove(((PacketPlayOutClientUnregistered) packet).getUuid());
             channelHandlerContext.channel().close();
 
