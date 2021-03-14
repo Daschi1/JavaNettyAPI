@@ -20,10 +20,10 @@ public class PacketDecoder extends ByteToMessageDecoder {
         }
         packet.read(byteBuf);
         if (uuid == null) {
-            System.out.println("Received packet '" + packet.getClass().getSimpleName() + "'.");
+            // System.out.println("Received packet '" + packet.getClass().getSimpleName() + "'.");
             packet.clientReceived();
         } else {
-            System.out.println("Received packet '" + packet.getClass().getSimpleName() + "' from '" + uuid + "'.");
+            // System.out.println("Received packet '" + packet.getClass().getSimpleName() + "' from '" + uuid + "'.");
             packet.serverReceived(uuid);
         }
         out.add(packet);
