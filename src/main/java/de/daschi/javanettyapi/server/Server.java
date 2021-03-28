@@ -20,7 +20,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public class Server {
 
@@ -71,11 +70,13 @@ public class Server {
     }
 
 
-    public void disconnect() throws ExecutionException, InterruptedException {
-        this.shuttingDown = true;
-        this.disconnectAllClients();
-        this.channel.closeFuture().awaitUninterruptibly().get();
-        this.eventLoopGroup.shutdownGracefully().get();
+    public void disconnect() {
+        CompletableFuture.runAsync(() -> {
+            this.shuttingDown = true;
+            this.disconnectAllClients();
+            this.channel.closeFuture().awaitUninterruptibly();
+            this.eventLoopGroup.shutdownGracefully();
+        }, this.getEventLoopGroup());
     }
 
     public void sendPacket(final UUID uuid, final Packet packet) {
@@ -91,9 +92,7 @@ public class Server {
     }
 
     public CompletableFuture<Void> sendPacketToAllAsync(final Packet packet) {
-        return CompletableFuture.runAsync(() -> {
-            ServerSession.getChannels().forEach((uuid, channel) -> this.sendPacket(uuid, packet));
-        }, this.getEventLoopGroup());
+        return CompletableFuture.runAsync(() -> ServerSession.getChannels().forEach((uuid, channel) -> this.sendPacket(uuid, packet)), this.getEventLoopGroup());
     }
 
     public void disconnectClient(final UUID uuid) {

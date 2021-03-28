@@ -35,7 +35,7 @@ public class ClientSession extends SimpleChannelInboundHandler<Packet> {
     @Override
     protected void channelRead0(final ChannelHandlerContext channelHandlerContext, final Packet packet) {
         if (packet instanceof PacketPlayOutClientDisconnect) {
-            CompletableFuture.runAsync(() -> Client.getClient().disconnect());
+            CompletableFuture.runAsync(() -> Client.getClient().disconnect(), Client.getClient().getEventLoopGroup());
         }
     }
 }
