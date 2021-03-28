@@ -45,9 +45,10 @@ public class Core {
     }
 
     public static Class<? extends Packet> getPacketById(final int id) {
-        for (final Class<? extends Packet> packet : Core.packets) {
-            if (Core.getPacketId(packet) == id) {
-                return packet;
+        final Class<? extends Packet> aClass = Core.packets.get(id);
+        if (aClass != null){
+            if (Core.packets.contains(aClass)){
+                return aClass;
             }
         }
         throw new JavaNettyAPIException("Could not find the packet for the packetId '" + id + "'.");

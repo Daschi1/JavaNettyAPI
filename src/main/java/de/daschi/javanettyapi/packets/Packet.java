@@ -26,7 +26,6 @@ public abstract class Packet {
     public void writeString(final ByteBuf byteBuf, final String s, final Charset charset) {
         final byte[] bytes = s.getBytes(charset);
         byteBuf.writeInt(bytes.length);
-        
         byteBuf.writeBytes(bytes);
     }
 
