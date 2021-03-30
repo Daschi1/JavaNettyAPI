@@ -48,9 +48,9 @@ public class Core {
         return packet.getAnnotation(PacketID.class).value();
     }
 
-    public static Class<? extends Packet> getPacketById(final int id) {
+    public static Class<? extends Packet> getPacketById(int id) {
         if (id < packetArray.length){
-            return (Class<? extends Packet>) packetArray[id];
+            return (Class<? extends Packet>) packetArray[id + systemPackets.size()];
         }
         return null;
     }
