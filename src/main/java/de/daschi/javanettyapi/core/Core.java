@@ -8,10 +8,8 @@ import de.daschi.javanettyapi.packets.server.PacketPlayOutClientDisconnect;
 import io.netty.channel.epoll.Epoll;
 import org.reflections.Reflections;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Core {
 
@@ -19,6 +17,8 @@ public class Core {
 
     private static final List<Class<? extends Packet>> systemPackets = new ArrayList<>(Arrays.asList(PacketPlayOutClientRegistered.class, PacketPlayOutClientUnregistered.class, PacketPlayOutClientDisconnect.class));
     private static final List<Class<? extends Packet>> packets = new ArrayList<>();
+
+    private static Class[] packetArray = new Class[0];
 
     static {
         Core.loadPackets("de.daschi.javanettyapi.packets.server");
@@ -35,6 +35,10 @@ public class Core {
             }
             throw new JavaNettyAPIException("The packet '" + packet + "' is not allowed to have a packetID below zero.");
         });
+        Core.packets.sort(Comparator.comparing(Core::getPacketId));
+        packetArray = new Class[Core.packets.size()];
+        AtomicInteger i = new AtomicInteger();
+        Core.packets.forEach(aClass -> packetArray[i.getAndIncrement()] = aClass);
     }
 
     public static int getPacketId(final Class<? extends Packet> packet) {
@@ -45,12 +49,24 @@ public class Core {
     }
 
     public static Class<? extends Packet> getPacketById(final int id) {
-        for (final Class<? extends Packet> packet : Core.packets) {
-            if (Core.getPacketId(packet) == id) {
-                return packet;
+        if (id < packetArray.length){
+            return (Class<? extends Packet>) packetArray[id];
+        }
+        return null;
+    }
+
+    /*public static Class<? extends Packet> getPacketById(final int id) {
+        Class<? extends Packet> aClass = null;
+        for (final Class<? extends Packet> packet : Core.packets){
+            if (Core.getPacketId(packet) == id){
+                aClass = packet;
             }
         }
-        throw new JavaNettyAPIException("Could not find the packet for the packetId '" + id + "'.");
-    }
+        if (aClass != null){
+            return aClass;
+        } else {
+            throw new JavaNettyAPIException("Could not find the packet for the packetId '" + id + "'.");
+        }
+    }*/
 
 }
