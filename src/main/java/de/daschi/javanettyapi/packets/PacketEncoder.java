@@ -12,6 +12,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet> {
     @Override
     protected void encode(final ChannelHandlerContext channelHandlerContext, final Packet packet, final ByteBuf byteBuf) {
         final int packedId = Core.getPacketId(packet.getClass());
+        byteBuf.resetWriterIndex();
         byteBuf.writeInt(packedId);
         if (ClientSession.getChannel() != null) {
             packet.writeUuid(byteBuf, Client.getClient().getUuid());

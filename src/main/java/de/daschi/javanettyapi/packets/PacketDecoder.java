@@ -13,6 +13,7 @@ public class PacketDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(final ChannelHandlerContext channelHandlerContext, final ByteBuf byteBuf, final List<Object> out) throws Exception {
         final int id = byteBuf.readInt();
+        byteBuf.resetReaderIndex();
         final Packet packet = Core.getPacketById(id).getDeclaredConstructor().newInstance();
         if (Core.isPacketRegistered(packet)){
             UUID uuid = null;
