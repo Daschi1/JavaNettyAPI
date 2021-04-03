@@ -14,18 +14,20 @@ public class PacketDecoder extends ByteToMessageDecoder {
     protected void decode(final ChannelHandlerContext channelHandlerContext, final ByteBuf byteBuf, final List<Object> out) throws Exception {
         final int id = byteBuf.readInt();
         final Packet packet = Core.getPacketById(id).getDeclaredConstructor().newInstance();
-        UUID uuid = null;
-        if (ClientSession.getChannel() == null) {
-            uuid = packet.readUuid(byteBuf);
+        if (Core.isPacketRegistered(packet)){
+            UUID uuid = null;
+            if (ClientSession.getChannel() == null) {
+                uuid = packet.readUuid(byteBuf);
+            }
+            packet.read(byteBuf);
+            if (uuid == null) {
+                // System.out.println("Received packet '" + packet.getClass().getSimpleName() + "'.");
+                packet.clientReceived();
+            } else {
+                // System.out.println("Received packet '" + packet.getClass().getSimpleName() + "' from '" + uuid + "'.");
+                packet.serverReceived(uuid);
+            }
+            out.add(packet);
         }
-        packet.read(byteBuf);
-        if (uuid == null) {
-            // System.out.println("Received packet '" + packet.getClass().getSimpleName() + "'.");
-            packet.clientReceived();
-        } else {
-            // System.out.println("Received packet '" + packet.getClass().getSimpleName() + "' from '" + uuid + "'.");
-            packet.serverReceived(uuid);
-        }
-        out.add(packet);
     }
 }

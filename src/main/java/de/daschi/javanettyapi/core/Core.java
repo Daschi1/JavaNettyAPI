@@ -8,17 +8,15 @@ import de.daschi.javanettyapi.packets.server.PacketPlayOutClientDisconnect;
 import io.netty.channel.epoll.Epoll;
 import org.reflections.Reflections;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class Core {
 
     public static final boolean EPOLL_IS_AVAILABLE = Epoll.isAvailable();
 
-    private static final List<Class<? extends Packet>> systemPackets = new ArrayList<>(Arrays.asList(PacketPlayOutClientRegistered.class, PacketPlayOutClientUnregistered.class, PacketPlayOutClientDisconnect.class));
-    private static final List<Class<? extends Packet>> packets = new ArrayList<>();
+    private static final List<Class<? extends Packet>> systemPackets = new LinkedList<>(Arrays.asList(PacketPlayOutClientRegistered.class, PacketPlayOutClientUnregistered.class, PacketPlayOutClientDisconnect.class));
+    private static final List<Class<? extends Packet>> packets = new LinkedList<>();
 
     static {
         Core.loadPackets("de.daschi.javanettyapi.packets.server");
@@ -44,18 +42,12 @@ public class Core {
         return packet.getAnnotation(PacketID.class).value();
     }
 
+    public static boolean isPacketRegistered(Packet packet){
+        return packets.contains(packet.getClass());
+    }
+
     public static Class<? extends Packet> getPacketById(final int id) {
-        Class<? extends Packet> aClass = null;
-        for (final Class<? extends Packet> packet : Core.packets){
-            if (Core.getPacketId(packet) == id){
-                aClass = packet;
-            }
-        }
-        if (aClass != null){
-            return aClass;
-        } else {
-            throw new JavaNettyAPIException("Could not find the packet for the packetId '" + id + "'.");
-        }
+        return Core.packets.stream().filter(packet -> Core.getPacketId(packet) == id).findFirst().orElse(null);
     }
 
 }
