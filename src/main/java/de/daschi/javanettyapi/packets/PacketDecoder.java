@@ -15,9 +15,18 @@ import java.util.stream.IntStream;
 public class PacketDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(final ChannelHandlerContext channelHandlerContext, final ByteBuf byteBuf, final List<Object> out) throws Exception {
-        final int id = byteBuf.readInt();
-        byteBuf.readerIndex(byteBuf.readerIndex() + byteBuf.readableBytes());
-        final Packet packet = Core.getPacketById(id).getDeclaredConstructor().newInstance();
+        if (!byteBuf.isReadable(Core.MAX_BYTE_LENGTH)){
+            return;
+        }
+        byteBuf.markReaderIndex();
+        int length = byteBuf.readInt() - Core.MAX_BYTE_LENGTH;
+
+        if (byteBuf.readableBytes() < length){
+            byteBuf.resetReaderIndex();
+            return;
+        }
+
+        final Packet packet = Core.getPacketById(length).getDeclaredConstructor().newInstance();
         if (Core.isPacketRegistered(packet)){
             UUID uuid = null;
             if (ClientSession.getChannel() == null) {

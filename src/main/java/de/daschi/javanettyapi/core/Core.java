@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 public class Core {
 
     public static final boolean EPOLL_IS_AVAILABLE = Epoll.isAvailable();
+    public static final int MAX_BYTE_LENGTH = 1024;
 
     private static final List<Class<? extends Packet>> systemPackets = new LinkedList<>(Arrays.asList(PacketPlayOutClientRegistered.class, PacketPlayOutClientUnregistered.class, PacketPlayOutClientDisconnect.class));
     private static final List<Class<? extends Packet>> packets = new LinkedList<>();
