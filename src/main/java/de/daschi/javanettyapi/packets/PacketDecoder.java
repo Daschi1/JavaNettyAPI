@@ -6,14 +6,17 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
+import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 public class PacketDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(final ChannelHandlerContext channelHandlerContext, final ByteBuf byteBuf, final List<Object> out) throws Exception {
         final int id = byteBuf.readInt();
-        byteBuf.resetReaderIndex();
+        byteBuf.readerIndex(byteBuf.readerIndex() + byteBuf.readableBytes());
         final Packet packet = Core.getPacketById(id).getDeclaredConstructor().newInstance();
         if (Core.isPacketRegistered(packet)){
             UUID uuid = null;
@@ -31,4 +34,5 @@ public class PacketDecoder extends ByteToMessageDecoder {
             out.add(packet);
         }
     }
+
 }

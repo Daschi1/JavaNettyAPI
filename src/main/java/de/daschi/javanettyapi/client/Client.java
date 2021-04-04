@@ -10,6 +10,7 @@ import de.daschi.javanettyapi.packets.client.PacketPlayOutClientUnregistered;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
@@ -43,6 +44,20 @@ public class Client {
     public void connect() {
         try {
             this.channel = new Bootstrap().group(this.eventLoopGroup).channel(Core.EPOLL_IS_AVAILABLE ? EpollSocketChannel.class : NioSocketChannel.class).handler(new ChannelInitializer() {
+                @Override
+                protected void initChannel(final Channel channel) {
+                    channel.pipeline().addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ClientSession());
+                }
+            }).connect(this.hostname, this.port).sync().channel();
+            this.sendPacket(new PacketPlayOutClientRegistered(this.uuid));
+        } catch (final InterruptedException exception) {
+            throw new JavaNettyAPIException("Could not connect the client to '" + this.hostname + ":" + this.port + "'.", exception);
+        }
+    }
+
+    public void connectWithOption() {
+        try {
+            this.channel = new Bootstrap().group(this.eventLoopGroup).option(ChannelOption.TCP_FASTOPEN_CONNECT, true).channel(Core.EPOLL_IS_AVAILABLE ? EpollSocketChannel.class : NioSocketChannel.class).handler(new ChannelInitializer() {
                 @Override
                 protected void initChannel(final Channel channel) {
                     channel.pipeline().addLast(new PacketDecoder()).addLast(new PacketEncoder()).addLast(new ClientSession());
